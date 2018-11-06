@@ -8,7 +8,7 @@ from django.shortcuts import render, redirect
 
 # Create your views here.
 from AXF import settings
-from app.models import Wheel, Nav, Mustbuy, Shop, MainShow, Foodtypes, Goods, User
+from app.models import Wheel, Nav, Mustbuy, Shop, MainShow, Foodtypes, Goods, User, Cart
 
 
 def home(request):
@@ -50,7 +50,7 @@ def market(request,categoryid,childid,sortid):
 
     # 获取点击 历史
     typeIndex = int(request.COOKIES.get('typeIndex',0))
-    print(foodtypes[typeIndex])
+    # print(foodtypes[typeIndex])
     categoryid = foodtypes[typeIndex].typeid
 
 
@@ -82,21 +82,47 @@ def market(request,categoryid,childid,sortid):
     if sortid == '3':
         goodslist = goodslist.order_by('-price')
 
+
+    # 购物车数量问题
+    token = request.session.get('token')
+    carts = []
+    if token:
+        user = User.objects.get(token=token)
+        carts = Cart.objects.filter(user=user).exclude(number=0)
+
+
+
+
     data = {
         'title':'闪购超市',
         'foodtypes':foodtypes,
         'goodslist':goodslist,
         'childlist':childlist,
         'categoryid':categoryid,
-        'childid':childid
+        'childid':childid,
+        'cart':carts,
 
     }
+
+
 
     return render(request, 'market/market.html', context=data)
 
 
 def cart(request):
-    return render(request, 'cart/cart.html')
+    token = request.session.get('token')
+    carts = []
+    if token:
+        user = User.objects.get(token=token)
+
+        carts = Cart.objects.filter(user=user).exclude(number=0)
+
+
+    response_data = {
+        'title':'购物车',
+        'carts':carts
+    }
+    return render(request, 'cart/cart.html',context=response_data)
 
 
 def mine(request):
@@ -193,7 +219,7 @@ def login(request):
     elif request.method == 'GET':
         return render(request,'mine/login.html')
 
-
+# 用户验证
 def checkuser(request):
     account = request.GET.get('account')
     try:
@@ -203,4 +229,84 @@ def checkuser(request):
     except:
         return JsonResponse({'msg':'用户名可用','status':'1'})
 
+# 添加购物车
+def addtocart(request):
 
+    goodsid = request.GET.get('goodsid')
+
+    token = request.session.get('token')
+
+    response_data = {
+        'msg':'',
+        'status':'',
+    }
+
+
+    if token: # 有登录
+        # print('yijingdenglu')
+
+        user = User.objects.get(token=token)
+        goods = Goods.objects.get(pk=goodsid)
+
+        carts = Cart.objects.filter(goods=goods).filter(user=user)
+        if carts.exists():
+            cart = carts.first()
+            cart.number = cart.number + 1
+            if int(goods.storenums) < cart.number:
+                cart.number = goods.storenums
+            cart.save()
+
+            response_data['msg'] = '添加购物车成功'
+            response_data['status'] = 1
+            response_data['number'] = cart.number
+            return JsonResponse(response_data)
+        else:
+            cart = Cart()
+            cart.user = user
+            cart.goods = goods
+            cart.number = 1
+            cart.save()
+
+            response_data['msg'] = '添加购物车成功'
+            response_data['status'] = 1
+            response_data['number'] = cart.number
+            return JsonResponse(response_data)
+    else:     # 未登录
+        response_data['msg'] = '请登陆后操作'
+        response_data['status'] = '-1'
+
+        return JsonResponse(response_data)
+
+
+def subtocart(request):
+    token = request.session.get('token')
+    user = User.objects.get(token=token)
+    goodsid = request.GET.get('goodsid')
+    goods = Goods.objects.get(pk=goodsid)
+
+
+    carts = Cart.objects.filter(user=user).filter(goods=goods)
+    cart = carts.first()
+    cart.number = cart.number - 1
+    cart.save()
+
+    response_data = {
+        'msg':'删减成功',
+        'status':'1',
+        'number':cart.number
+    }
+    return JsonResponse(response_data)
+
+
+def changecartstatus(request):
+    cartid = request.GET.get('cartid')
+    cart = Cart.objects.get(pk=cartid)
+    cart.isselect = not cart.isselect
+    cart.save()
+
+    response_data = {
+        'msg':'修改状态成功',
+        'status':'1',
+        'isselect':cart.isselect
+    }
+    return JsonResponse(response_data)

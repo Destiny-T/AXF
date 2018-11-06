@@ -15,6 +15,9 @@ urlpatterns = [
     url(r'^logout/$',views.quit,name='logout'),
     url(r'checkuser/$',views.checkuser,name='checkuser'),
 
+    url(r'^addtocart/$',views.addtocart,name='addtocart'),
+    url(r'^subtocart/$',views.subtocart,name='subtocart'),
+    url(r'^changecartstatus/$',views.changecartstatus,name='changecartstatus'),
 
 
 ]

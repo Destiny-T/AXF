@@ -67,4 +67,66 @@ $(function(){
 
     })
 
+
+
+
+    // 购物车操作
+    // 默认隐藏
+    $('.bt-wrapper>.glyphicon-minus').hide()
+    $('.bt-wrapper>.num').hide()
+
+    //购物车数据不为0显示
+    $('.bt-wrapper>.num').each(function () {
+        if(parseInt($(this).html())){
+            $(this).show()
+            $(this).prev().show()
+        }
+    })
+
+
+
+
+
+    // 加操作
+    $('.bt-wrapper>.glyphicon-plus').click(function () {
+
+        // console.log($(this))
+        var goodsid = $(this).attr('goodsid')
+        var $that = $(this)
+
+        //发起ajax请求
+        $.get('/axf/addtocart/',{'goodsid':goodsid},function (response) {
+            // console.log(response)
+
+            if (response['status'] == '-1'){
+
+                window.open('/axf/login/',target='_self')
+
+            }else{
+                console.log(response)
+                // console.log($(this).prev())
+                $that.prev().html(response['number']).show()
+                $that.prev().prev().show()
+            }
+        })
+    })
+
+    $('.bt-wrapper>.glyphicon-minus').click(function () {
+        var goodsid = $(this).attr('goodsid')
+        var $that = $(this)
+
+        $.get('/axf/subtocart/',{'goodsid':goodsid},function (response) {
+
+            if (response['status'] == '1'){
+                var number = parseInt(response['number'])
+                if (number>0){
+                    $that.next().html(response['number'])
+                }else{
+                    $that.next().hide()
+                    $that.hide()
+                }
+            }
+        })
+    })
+
 })

@@ -150,6 +150,18 @@ class User(models.Model):
     token = models.CharField(max_length=100)
 
 
+class Cart(models.Model):
+
+    user = models.ForeignKey(User)
+
+    goods = models.ForeignKey(Goods)
+
+    number = models.IntegerField(default=1)
+
+    isselect = models.BooleanField(default=True)
+
+
+
 
 
 
