@@ -310,3 +310,21 @@ def changecartstatus(request):
         'isselect':cart.isselect
     }
     return JsonResponse(response_data)
+
+def changecartselect(request):
+    isselect = request.GET.get('isselect')
+    if isselect == 'true':
+        isselect = True
+    else:
+        isselect = False
+
+    token = request.session.get('token')
+    user = User.objects.get(token=token)
+    carts = Cart.objects.filter(user=user)
+    for cart in carts:
+        cart.isselect = isselect
+        cart.save()
+
+    return JsonResponse({'msg':'反选操作成功', 'status':1})
+
+
